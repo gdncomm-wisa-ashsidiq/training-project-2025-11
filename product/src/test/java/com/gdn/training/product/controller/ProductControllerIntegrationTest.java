@@ -12,8 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -71,6 +70,81 @@ class ProductControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name", is("Camera Pro")))
                 .andExpect(jsonPath("$.data.id", is(saved.getId().toString())));
+    }
+
+    @Test
+    void searchProductsReturnsAllWhenQueryBlank() throws Exception {
+        productRepository.save(Product.builder()
+                .name("Alpha Product")
+                .description("first product")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/alpha")
+                .build());
+        productRepository.save(Product.builder()
+                .name("Beta Product")
+                .description("second product")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/beta")
+                .build());
+
+        mockMvc.perform(get("/products").param("query", "   "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", hasSize(2)));
+    }
+
+    @Test
+    void searchProductsUsesWildcardQueryWhenPatternPresent() throws Exception {
+        productRepository.save(Product.builder()
+                .name("Gadget Pro")
+                .description("pro gadget")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/gadget-pro")
+                .build());
+        productRepository.save(Product.builder()
+                .name("Widget Pro")
+                .description("pro widget")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/widget-pro")
+                .build());
+
+        mockMvc.perform(get("/products").param("query", "Gadget*Pro"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", hasSize(1)))
+                .andExpect(jsonPath("$.data.content[0].name", is("Gadget Pro")));
+    }
+
+    @Test
+    void searchProductsFallsBackToContainsSearch() throws Exception {
+        productRepository.save(Product.builder()
+                .name("Widget Beta")
+                .description("beta widget")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/widget-beta")
+                .build());
+        productRepository.save(Product.builder()
+                .name("Other Product")
+                .description("other")
+                .price(BigDecimal.TEN)
+                .quantity(Integer.MAX_VALUE)
+                .imageUrl("https://example.com/other")
+                .build());
+
+        mockMvc.perform(get("/products").param("query", "widget"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", hasSize(1)))
+                .andExpect(jsonPath("$.data.content[0].name", is("Widget Beta")));
+    }
+
+    @Test
+    void getProductByIdThrowsWhenMissing() throws Exception {
+        mockMvc.perform(get("/products/{id}", java.util.UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("Product not found")));
     }
 }
 

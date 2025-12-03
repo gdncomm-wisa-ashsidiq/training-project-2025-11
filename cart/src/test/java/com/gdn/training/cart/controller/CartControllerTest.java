@@ -7,8 +7,8 @@ import com.gdn.training.cart.service.CartService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -35,7 +35,7 @@ class CartControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private CartService cartService;
 
     @Test
@@ -47,7 +47,7 @@ class CartControllerTest {
                 .build();
         when(cartService.getCart("1")).thenReturn(cart);
 
-        mockMvc.perform(get("/cart").header("X-User-Id", "1"))
+        mockMvc.perform(get("/").header("X-User-Id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.id", is("cart-1")));
@@ -78,7 +78,7 @@ class CartControllerTest {
                 .quantity(3)
                 .build();
 
-        mockMvc.perform(post("/cart")
+        mockMvc.perform(post("/")
                         .header("X-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(payload)))
@@ -99,7 +99,7 @@ class CartControllerTest {
                 .build();
         when(cartService.removeFromCart("1", "product-1")).thenReturn(cart);
 
-        mockMvc.perform(delete("/cart/{productId}", "product-1").header("X-User-Id", "1"))
+        mockMvc.perform(delete("/{productId}", "product-1").header("X-User-Id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Item removed from cart")));
 

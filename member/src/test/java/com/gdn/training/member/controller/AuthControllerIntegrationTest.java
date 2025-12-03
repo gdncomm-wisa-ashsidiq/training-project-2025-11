@@ -81,5 +81,68 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.email", is("carol@example.com")))
                 .andExpect(jsonPath("$.message", is("Credentials validated")));
     }
+
+    @Test
+    void registerEndpointRejectsDuplicateEmail() throws Exception {
+        // Create existing member
+        Member existing = Member.builder()
+                .name("Dave")
+                .email("dave@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .role("ROLE_USER")
+                .build();
+        memberRepository.save(existing);
+
+        // Try to register with same email
+        RegisterRequest request = new RegisterRequest();
+        request.setName("Dave Duplicate");
+        request.setEmail("dave@example.com");
+        request.setPassword("Different123!");
+
+        mockMvc.perform(post("/internal/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("Email already registered")));
+    }
+
+    @Test
+    void validateCredentialsRejectsInvalidPassword() throws Exception {
+        // Create member
+        Member member = Member.builder()
+                .name("Eve")
+                .email("eve@example.com")
+                .password(passwordEncoder.encode("CorrectPassword123!"))
+                .role("ROLE_USER")
+                .build();
+        memberRepository.save(member);
+
+        // Try to login with wrong password
+        LoginRequest request = new LoginRequest();
+        request.setEmail("eve@example.com");
+        request.setPassword("WrongPassword123!");
+
+        mockMvc.perform(post("/internal/auth/validate-credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("Invalid credentials")));
+    }
+
+    @Test
+    void validateCredentialsRejectsNonExistentEmail() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("nonexistent@example.com");
+        request.setPassword("AnyPassword123!");
+
+        mockMvc.perform(post("/internal/auth/validate-credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("Invalid credentials")));
+    }
 }
 

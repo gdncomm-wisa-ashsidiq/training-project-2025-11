@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -38,10 +38,10 @@ class AuthControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private MemberClient memberClient;
 
-    @MockBean
+    @MockitoBean
     private TokenBlacklistService tokenBlacklistService;
 
     @BeforeEach
@@ -72,7 +72,7 @@ class AuthControllerIntegrationTest {
         request.setPassword("Secret123!");
 
         when(memberClient.validateCredentials(any(LoginRequest.class))).thenReturn(UserInfoDTO.builder()
-                .id(UUID.randomUUID())
+                .id(123456789L)
                 .email("user@example.com")
                 .name("User")
                 .role("ROLE_USER")
@@ -88,9 +88,8 @@ class AuthControllerIntegrationTest {
 
     @Test
     void logoutEndpointBlacklistsToken() throws Exception {
-        // first log in to obtain a token
         when(memberClient.validateCredentials(any(LoginRequest.class))).thenReturn(UserInfoDTO.builder()
-                .id(UUID.randomUUID())
+                .id(123456789L)
                 .email("user@example.com")
                 .name("User")
                 .role("ROLE_USER")

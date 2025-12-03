@@ -3,7 +3,6 @@ package com.gdn.training.api_gateway.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gdn.training.api_gateway.client.MemberClient;
 import com.gdn.training.api_gateway.dto.LoginRequest;
-import com.gdn.training.api_gateway.dto.LoginResponse;
 import com.gdn.training.api_gateway.dto.RegisterRequest;
 import com.gdn.training.api_gateway.dto.UserInfoDTO;
 import com.gdn.training.api_gateway.security.AccessTokenResolver;
@@ -11,15 +10,12 @@ import com.gdn.training.api_gateway.security.JwtService;
 import com.gdn.training.api_gateway.security.TokenBlacklistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Map;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
@@ -30,7 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(controllers = AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
     @Autowired
@@ -39,17 +36,20 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private MemberClient memberClient;
 
-    @MockBean
+    @MockitoBean
     private JwtService jwtService;
 
-    @MockBean
+    @MockitoBean
     private AccessTokenResolver accessTokenResolver;
 
-    @MockBean
+    @MockitoBean
     private TokenBlacklistService tokenBlacklistService;
+
+    @MockitoBean
+    private com.gdn.training.api_gateway.security.JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +80,7 @@ class AuthControllerTest {
         request.setPassword("Secret123!");
 
         when(memberClient.validateCredentials(any(LoginRequest.class))).thenReturn(UserInfoDTO.builder()
-                .id(UUID.randomUUID())
+                .id(123456789L)
                 .email("user@example.com")
                 .name("User")
                 .role("ROLE_USER")

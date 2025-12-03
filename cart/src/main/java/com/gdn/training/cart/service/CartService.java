@@ -36,7 +36,6 @@ public class CartService {
             throw new IllegalArgumentException("Product not found");
         }
 
-        // keep cart item details aligned with the latest product information
         item.setProductName(product.getName());
         item.setPrice(product.getPrice());
         item.setImageUrl(product.getImageUrl());
@@ -50,7 +49,11 @@ public class CartService {
                 .findFirst();
 
         if (existingItem.isPresent()) {
-            existingItem.get().setQuantity(existingItem.get().getQuantity() + item.getQuantity());
+            CartItem existing = existingItem.get();
+            existing.setQuantity(existing.getQuantity() + item.getQuantity());
+            existing.setProductName(item.getProductName());
+            existing.setPrice(item.getPrice());
+            existing.setImageUrl(item.getImageUrl());
         } else {
             cart.getItems().add(item);
         }
