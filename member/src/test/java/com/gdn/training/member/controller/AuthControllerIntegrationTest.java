@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -56,8 +57,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.message", is("User registered successfully")));
 
         Member saved = memberRepository.findByEmail("bob@example.com").orElseThrow();
-        // password stored encoded and role is default
-        org.assertj.core.api.Assertions.assertThat(passwordEncoder.matches("Secret123!", saved.getPassword())).isTrue();
+        assertThat(passwordEncoder.matches("Secret123!", saved.getPassword())).isTrue();
     }
 
     @Test
@@ -84,7 +84,6 @@ class AuthControllerIntegrationTest {
 
     @Test
     void registerEndpointRejectsDuplicateEmail() throws Exception {
-        // Create existing member
         Member existing = Member.builder()
                 .name("Dave")
                 .email("dave@example.com")
@@ -93,7 +92,6 @@ class AuthControllerIntegrationTest {
                 .build();
         memberRepository.save(existing);
 
-        // Try to register with same email
         RegisterRequest request = new RegisterRequest();
         request.setName("Dave Duplicate");
         request.setEmail("dave@example.com");
@@ -109,7 +107,6 @@ class AuthControllerIntegrationTest {
 
     @Test
     void validateCredentialsRejectsInvalidPassword() throws Exception {
-        // Create member
         Member member = Member.builder()
                 .name("Eve")
                 .email("eve@example.com")
@@ -118,7 +115,6 @@ class AuthControllerIntegrationTest {
                 .build();
         memberRepository.save(member);
 
-        // Try to login with wrong password
         LoginRequest request = new LoginRequest();
         request.setEmail("eve@example.com");
         request.setPassword("WrongPassword123!");
